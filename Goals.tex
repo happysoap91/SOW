@@ -4,22 +4,7 @@ Given the large amount of simulation data generated from LAMMPS (Large-scale Ato
 
 
 \begin{itemize}
-\item \textbf{Goal 1:} \emph{Predicting Fracture Propagation} 
-\begin{itemize} 
-    \item Definition of fracture propagation: Given an existing void in the material,
-    \item Method: We are going to use a derivation of recurrent neural network(RNN), the long-short term memory networks(LSTM) to predict the propagation of an existing void. The reason why we choose LSTM over RNN is that it's a more flexible model and can control how much of a memory we would like the model to contain when making predictions.
-    
-\end{itemize}
-
-
-
-\end{itemize}
-
-
-
-
-\begin{itemize}
-\item \textbf{Goal 2:} \emph{Predicting Fracture Nucleation Events} 
+\item \textbf{Goal 1:} \emph{Predicting Fracture Nucleation Events} 
 \begin{itemize} 
     \item Definition of fracture nucleation: Nucleation event is the creation of void in the material. As stress is applied, atoms are displaced with respect to their original position and becoming part of a fracture. To describe it mathematically, we denote $d_i$ as the distance between the position of atom $a_i$ at time step $t_{n+1}$ relative to its position at time step $t_{n}$, $\mu_i$ as the average displacement of atom $a_i$ over all time steps, $\sigma_i$ as the standard deviation of displacement of atom $a_i$ over all time steps. And we measure displacement of atom $a_i$ at time step $t_{n+1}$ as:
     \[
@@ -30,3 +15,15 @@ Given the large amount of simulation data generated from LAMMPS (Large-scale Ato
 \end{itemize}
 \end{itemize}
 
+
+\begin{itemize}
+\item \textbf{Goal 2:} \emph{Predicting Fracture Propagation} 
+\begin{itemize} 
+    \item Definition of fracture propagation: Given an existing void in the material,
+    \item Method: We are going to use a derivation of recurrent neural network(RNN), the long-short term memory networks(LSTM) to predict the propagation of an existing void. The reason why we choose LSTM over RNN is that it's a more flexible model and can control how much of a memory we would like the model to contain when making predictions.
+    
+\end{itemize}
+
+
+
+\end{itemize}
