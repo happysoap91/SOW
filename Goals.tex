@@ -6,11 +6,17 @@ Given the large amount of simulation data generated from LAMMPS (Large-scale Ato
 \begin{itemize}
 \item \textbf{Goal 1:} \emph{Predicting Fracture Nucleation Events} 
 \begin{itemize} 
-    \item Definition of fracture nucleation: Nucleation event is the creation of void in the material. As stress is applied, atoms are displaced with respect to their original position and becoming part of a fracture. To describe it mathematically, we denote $d_i$ as the distance between the position of atom $a_i$ at time step $t_{n+1}$ relative to its position at time step $t_{n}$, $\mu_i$ as the average displacement of atom $a_i$ over all time steps, $\sigma_i$ as the standard deviation of displacement of atom $a_i$ over all time steps. And we measure displacement of atom $a_i$ at time step $t_{n+1}$ as:
+    \item Definition of fracture nucleation: Nucleation event is the creation of void in the material. As stress is applied, atoms are displaced with respect to their original position and becoming part of a fracture. To describe it mathematically, we denote $d_i$ as the distance between the position of atom $a_i$ at time step $t+1$ relative to its position at time step $t$, $\mu^{[d]}_{t+1}$ as the average displacement of all atom over at time step $t+1$, $\sigma^{[d]}_{t+1}$ as the standard deviation of all atoms' displacement at time step $t+1$. And we measure displacement of atom $a_i$ at time step $t+1$ as:
     \[
-    nuc_d = \frac{(d_i - \mu_i)}{\sigma_i}
+    nuc_d = \frac{(d_i - \mu^{[d]}_{t+1})}{\sigma^{[d]}_{t+1}}
     \]
-    Then we will compare the displacement measure of all atoms relative to those are involved in a fracture process and set a threshold $nuc_d$ value to determine whether an atom is part of a fracture event or not.
+    As atoms get displaced from their original position, the local density of regions in the material has changed too. To capture this information, we define $v_i$ the volume of the Voronoi cell containing atom $i$. \textbf{Figure defining Voronoi cell will be inserted here}. Similarly, $\mu^{[d]}_{t}$ is the average Voronoi cell volume of all atoms over at time step $t$, $\sigma^{[d]}_{t}$ is the standard deviation of Voronoi cell volume of all atoms at time step $t$. 
+    \[
+    nuc_v = \frac{(v_i - \mu^{[v]}_{t})}{\sigma^{[v]}_{t}}
+    \]
+    
+    
+    Then we will combine $nuc_d$ and $nuc_v$ measure to describe whether or not a certain atom is involved in a fracture process. A threshold $nuc_d$ value to determine whether an atom is part of a fracture event or not.
     \item Contrary to a fracture propagation event, where there is existing void, and fracture just keeps growing along the existing fracture, a nucleation event has no existing fracture to propagates along. As a result, it is different to predict nucleation event. We know that a nucleation event could be influenced by the local structure, the direction of stress applied, and charges of atoms. So, we will be using several machine learning models to model how nucleation will emerge out of a certain atoms structure. 
 \end{itemize}
 \end{itemize}

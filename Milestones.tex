@@ -1,38 +1,11 @@
 \begin{enumerate}
 
-    \item \emph{Find an appropriate graph representation: }
-
-    \begin{itemize}
-    %\emph{Predicting Fracture Nucleation Events} 
-        Option 1: We define each atom, either a Si or Oxygen, as a node. Each node has features associated with it, such as position (defined by coordinates), charge, stress tensor, and bond information. An edge is the bond relationship between two nodes. There are no special features of the edges. Any fracture nucleation event originates from bonds breaking, which could happen between any pair of nodes, but especially those between Si and Oxygen atoms.
-        \\
-        Option 2: we define each node as a molecule, meaning one Si atom bonded with four oxygen. While stress is applied to the glass, bonds between atoms and molecules break. As atoms are pulled away from each other, the size of a node changes as well.
+\item { Graph representation implemented in Python.}
+\item {Feature Extraction from the MD simulation data to create training set.} 
+\item {Create ensemable classificaiton  as well as a recurrant neural network using Python packages such as sci-kit learn, Keras and Tensorflow.} 
+\item {Feature analysis and fine tuning parameters for increased accuracy. } 
+\item {Finalized surrogate model.}
         
-        \item \emph{Define fracture within our graph} : 
-        \\Based on the basic graph defined previously, we want to define a fracture. To do so, we consider the following approaches:
-        \begin{itemize}
-            \item Radial distribution
-            \item KNN
-            \item Simple distance
-        \end{itemize}
-    \end{itemize}
-
-    \item \emph{Predicting Fracture Propagation} 
-
-
-            Based on the given data, we have snapshots in time of the dynamic process. For each  atom, each snapshot contains coordinates for position, charge, stress tensor, and bond information, such as connectivity. We will define our features using these four data.
-        \begin{itemize}
-            \item Position using distance matrix
-            \item Charge
-            \item Stress tensor
-            \item Bond information. We utilize the local structure of the glass, where we have $Q_3$, $Q_4$, and $Q_5$. We will do so by using adjacency matrices.
-        \end{itemize}
-
-    \item \emph{Identifying Regions of Fractures} 
-        \begin{itemize}
-            \item To label and predict the nucleation of fractures, we must first identify the atoms that are in the process zone of a fracture. 
-            \item Computing the convex hull of a graph of nodes is one way to represent the process zone occupied by the nodes.
-        \end{itemize}
 \end{enumerate}
 
 
