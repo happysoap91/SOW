@@ -14,9 +14,7 @@ Given the large amount of simulation data generated from LAMMPS (Large-scale Ato
     \[
     nuc_v = \frac{(v_i - \mu^{[v]}_{t})}{\sigma^{[v]}_{t}}
     \]
-    
-    
-    Then we will combine $nuc_d$ and $nuc_v$ measure to describe whether or not a certain atom is involved in a fracture process. A threshold $nuc_d$ value to determine whether an atom is part of a fracture event or not.
+    Then we will combine $nuc_d$ and $nuc_v$ measure to describe whether or not a certain atom is involved in a fracture nucleation event. 
     \item Contrary to a fracture propagation event, where there is existing void, and fracture just keeps growing along the existing fracture, a nucleation event has no existing fracture to propagates along. As a result, it is different to predict nucleation event. We know that a nucleation event could be influenced by the local structure, the direction of stress applied, and charges of atoms. So, we will be using several machine learning models to model how nucleation will emerge out of a certain atoms structure. 
 \end{itemize}
 \end{itemize}

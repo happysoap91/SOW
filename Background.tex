@@ -19,13 +19,17 @@ with inner radius R1 and outer R2. Points are colored according to the magnitude
 Nucleation of fractures originates from defects of the atomic structure of silicate glass. 
 The fractures do not necessarily occur when the weakest bond in the structure breaks and triggers numerous other breaks in the surrounding bonds. Instead, the fracturing is dependent on the local structure surrounding the atoms so defining this relation is critical in the fracture analysis. While these relations can be studied using results from MD, a repetitive simulation-observation approach is computationally prohibitive. A more tractable approach is to use machine learning and surrogate modeling techniques.
 
-\begin{tabular}{cc}
-  \num\putindeepbox[2pt]{\includegraphics{picture/frac_prop1.PNG}}
-    & \num\putindeepbox[2pt]{\includegraphics{picture/frac_prop2.PNG}} \\
-  \num\putindeepbox[.5pt]{\includegraphics{picture/frac_prop3.PNG}}
-    & \num\putindeepbox[.5pt]{\includegraphics{picture/frac_prop4.PNG}} \\
-\end{tabular}
+\begin{figure}
+    \centering
+    \noindent
+\includegraphics[width=0.4\textwidth]{picture/frac_prop1.PNG}\hspace{0.2\textwidth}%
+\includegraphics[width=0.4\textwidth]{picture/frac_prop2.PNG}\\[2em]
+\includegraphics[width=0.4\textwidth]{picture/frac_prop3.PNG}\hspace{0.2\textwidth}%
+\includegraphics[width=0.4\textwidth]{picture/frac_prop4.PNG}\par
 
+    \caption{Crack propagation}
+    \label{crack_prop}
+\end{figure}
 
 
 \begin{comment}
@@ -35,7 +39,7 @@ The fractures do not necessarily occur when the weakest bond in the structure br
   \caption{Images of a simulated a-SiO2 sample. (a) Samples are loaded and held in mode I tension. Initial cracks are created by removing a
 small number of atoms from the upper surface of the sample. (b) An example of crack propagation in a loaded sample, with the crack tip
 identified by the +, and the annulus colored red. Figure reproduced from~\protect\cite{mWilson_continuum_stress}} 
-  \label{crack_prop}
+  \label{crack_prop2}
 \end{figure}
 \end{comment}
 
@@ -43,15 +47,14 @@ identified by the +, and the annulus colored red. Figure reproduced from~\protec
 
 
 
-Typically in these silicate glass structures, silicon (Si) is surrounded by four oxygen (O) atoms forming a tetrahedron seen in Figure \ref{tetrahedra}. These tetrahedra share one common O atom if they are neighbors. A ring forms if a group of tetrahedra share common O atoms, and the size of these rings is computed based on how many Si atoms are in the ring. A large ring has 11 and 12 Si atoms, medium rings have 5 and 6, and small rings have 1 or 2.
+Typically in these silicate glass structures, silicon (Si) is surrounded by four oxygen (O) atoms forming a tetrahedron seen in Figure \ref{SiO2}. These tetrahedra share one common O atom if they are neighbors. A ring forms if a group of tetrahedra share common O atoms, and the size of these rings is computed based on how many Si atoms are in the ring. A large ring has 11 and 12 Si atoms, medium rings have 5 and 6, and small rings have 1 or 2.
 
 \begin{figure}[!h]
   \centering
-  \includegraphics[width=11cm]{picture/tetrahedra.PNG}
-  \caption{Sketch of two corner-sharing tetrahedra, where the cyan balls represent oxygen
-and the red balls represent silicon atoms.
-Figure reproduced from~\protect\cite{ebrahem2018influence}} 
-  \label{tetrahedra}
+  \includegraphics[width=11cm]{picture/SiO2Ring.PNG}
+  \caption{SiO2 Ring structure
+Figure reproduced from UMass Amherst Dept. Geosciences} 
+  \label{SiO2}
 \end{figure}
 
 \begin{comment}
