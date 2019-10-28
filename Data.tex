@@ -1,16 +1,27 @@
-The training data consists of one hundred silicate samples with the following setup: 
+
+Sandia National Labs will provide the MD simulation data used for training the surrogate model. At the present time 100 simulations have been constructed each consisting a sample of a fracture at the atomic level. The training data is broken up into the following four parts:
+
 \begin{enumerate}
-    \item Dry (vacuum), free surfaces in two directions.
-    \item Wet (H20 in voids), free surfaces in two directions
-    \item Dry (vacuum), fully periodic (toroidal) boundary conditions.
-    \item Wet (H20 in voids), fully periodic (toroidal) boundary conditions.
+    \item Dry (vacuum), free surfaces on the y,z axis and periodic in the x direction.
+    \item Wet (H20 in interstices), free surfaces as above. 
+    \item Dry (vacuum), fully periodic (toroidal) in x,y and z axis.
+    \item Wet (H20 in interstices), fully periodic (toroidal) boundary conditions. 
 \end{enumerate}
+
+For each sample, uniaxel tension is performed until failure or up to .5 starin over 1\textit{ns} simulation time. 
 
 The silicate is exposed to these conditions following uniform quenching process done at 3.7K/picoseconds. So although we have four different environmental conditions, the procedures starts at equilibrium.
 Each instance will contain snapshots of the atoms through time as well as information regarding charge, stress tensor and bond connectivity. 
 
-Molecular dynamics (MD) simulations have shown that silicates that have their fracture regions contacted with an aqueous environment have their Si-O bond energy threshold lowered by 25$\%$  \cite{chem_effects}. Since there are?is? both mechanical loading (stress) and chemical that affect the crack tips, it becomes more difficult to predict fracture propagation. Running simulations of the chemical-mechanical effects on crack tips showed differing rates of fracture propagation as well as changes in fracture direction and even stress distribution in the atoms in the fracture process zone. 
+Post processed data was also provided as well as Python scripts to create and modify simulation data. Each sample 
 
+
+
+
+
+
+
+% BUNCH OF STUFF ????
 \begin{comment}
 \begin{figure}[!b]
   \centering
@@ -29,7 +40,7 @@ Molecular dynamics (MD) simulations have shown that silicates that have their fr
 \end{figure}
 \end{comment}
 
-Therefore, knowing the initial conditions of the silicate glass environment is critical in predicting fracture behavior and  will test the robustness of our model.
+
 
 \begin{comment}
 \begin{figure}[ht]

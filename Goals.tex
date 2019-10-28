@@ -1,6 +1,6 @@
 
-Fracture process in atomic scale is a complex process controlled by the local structure of atoms, stress applied, and charge of atoms. 
-Given the large amount of simulation data generated from LAMMPS (Large-scale Atomic/Molecular Massively Parallel Simulator), which is a molecular dynamics program from Sandia National Laboratories, we will train our neural network model on it. Using the trained model, we predict where fractures will emerge and how they will propagate. The nucleation events must be predicted in a certain region and fracture propagation is a continuing process of atoms being included in the fracture region, also known as the process zone. As a result, we separate our ultimate goal, which is to predict the complete glass fracture process, into two sub goals. And we will use two different models to address these problems respectively. 
+Fracture process in atomic scale is a complex process controlled by the local structure of atoms, stress applied, and forces between atoms and the strength of atomic bonds. 
+Given the large amount of simulation data generated from LAMMPS (Large-scale Atomic/Molecular Massively Parallel Simulator) \cite{PAMD}, which is a molecular dynamics program from Sandia National Laboratories, we will train our neural network model on it. Using the trained model, we predict where fractures will emerge and how they will propagate. The nucleation events must be predicted in a certain region and fracture propagation is a continuing process of atoms being included in the fracture region, also known as the process zone. As a result, we separate our ultimate goal, which is to predict the complete glass fracture process, into two sub goals. And we will use two different models to address these problems respectively. 
 
 
 \begin{itemize}
@@ -23,8 +23,11 @@ Given the large amount of simulation data generated from LAMMPS (Large-scale Ato
 \begin{itemize}
 \item \textbf{Goal 2:} \emph{Predicting Fracture Propagation} 
 \begin{itemize} 
-    \item Definition of fracture propagation: Given an existing void in the material,
-    \item Method: We are going to use a derivation of recurrent neural network(RNN), the long-short term memory networks(LSTM) to predict the propagation of an existing void. The reason why we choose LSTM over RNN is that it's a more flexible model and can control how much of a memory we would like the model to contain when making predictions.
+    \item Method: We are going to use a derivation of recurrent neural network(RNN), the long-short term memory networks(LSTM) to predict the propagation of an existing interstices. The reason why we choose LSTM over RNN is that it's a more flexible model and can control how much of a memory we would like the model to contain when making predictions.
+    
+    
+    
+    
     
 \end{itemize}
 
