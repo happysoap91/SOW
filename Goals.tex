@@ -1,21 +1,21 @@
+In this project, our ultimate goal is using machine learning methods to learn from Molecular Dynamics simulations, so that the trained machine learning models can produce rapid predictions of simulation results without the extensive computation that simulations would take. To realize the ultimate goal, we separate it into two sub-goals. One of the sub-goals is to predict fracture nucleation and the other one is to predict fracture propagation. The nucleation event is where fractures will emerge and must be predicted in a certain region and fracture propagation is a continuing process of atoms being included in the fracture region, also known as the process zone. And we will use two different models to address these problems respectively. 
 
-Fracture process in atomic scale is a complex process controlled by the local structure of atoms, stress applied, and forces between atoms and the strength of atomic bonds. 
-Given the large amount of simulation data generated from LAMMPS (Large-scale Atomic/Molecular Massively Parallel Simulator) \cite{PAMD}, which is a molecular dynamics program from Sandia National Laboratories, we will train our neural network model on it. Using the trained model, we predict where fractures will emerge and how they will propagate. The nucleation events must be predicted in a certain region and fracture propagation is a continuing process of atoms being included in the fracture region, also known as the process zone. As a result, we separate our ultimate goal, which is to predict the complete glass fracture process, into two sub goals. And we will use two different models to address these problems respectively. 
 
 
 \begin{itemize}
 \item \textbf{Goal 1:} \emph{Predicting Fracture Nucleation Events} 
 \begin{itemize} 
-    \item Definition of fracture nucleation: Nucleation event is the creation of void in the material. As stress is applied, atoms are displaced with respect to their original position and becoming part of a fracture. To describe it mathematically, we denote $d_i$ as the distance between the position of atom $a_i$ at time step $t+1$ relative to its position at time step $t$, $\mu^{[d]}_{t+1}$ as the average displacement of all atom over at time step $t+1$, $\sigma^{[d]}_{t+1}$ as the standard deviation of all atoms' displacement at time step $t+1$. And we measure displacement of atom $a_i$ at time step $t+1$ as:
+    \item Definition of fracture nucleation: Nucleation event is the creation of void in the material. As stress is applied uni-axially, bonds break and form among atoms. Correspondingly, some atoms have growing void among themselves and others are squished into a more dense region. And fracture nucleates alongside the void occurrence. 
+    
+    As a result, we define that whether an atom/a node is part of a nucleation event, using a local density measure, which is the Voronoi cell volume $v_i$, around a certain atom $i$. It is a volume measure because we are measuring the volume around the atom in a 3D graph. 
+    So, if $v_i$ exceeds a certain threshold, then atom $i$ is defined as part of a nucleation event. In this project, we set the threshold to be 3 standard deviation from the mean value, $\mu_v$, at the current time step.
+    \textbf{1. Could insert a figure here demonstrating 3D Voronoi volume}
+    \textbf{2. Could insert 3 figures demonstrating why we choose 3sd as our threshold}
     \[
-    nuc_d = \frac{(d_i - \mu^{[d]}_{t+1})}{\sigma^{[d]}_{t+1}}
-    \]
-    As atoms get displaced from their original position, the local density of regions in the material has changed too. To capture this information, we define $v_i$ the volume of the Voronoi cell containing atom $i$. \textbf{Figure defining Voronoi cell will be inserted here}. Similarly, $\mu^{[d]}_{t}$ is the average Voronoi cell volume of all atoms over at time step $t$, $\sigma^{[d]}_{t}$ is the standard deviation of Voronoi cell volume of all atoms at time step $t$. 
-    \[
-    nuc_v = \frac{(v_i - \mu^{[v]}_{t})}{\sigma^{[v]}_{t}}
-    \]
-    Then we will combine $nuc_d$ and $nuc_v$ measure to describe whether or not a certain atom is involved in a fracture nucleation event. 
-    \item Contrary to a fracture propagation event, where there is existing void, and fracture just keeps growing along the existing fracture, a nucleation event has no existing fracture to propagates along. As a result, it is different to predict nucleation event. We know that a nucleation event could be influenced by the local structure, the direction of stress applied, and charges of atoms. So, we will be using several machine learning models to model how nucleation will emerge out of a certain atoms structure. 
+    nuc_v = \frac{(v_i - \mu_v)}{\sigma_v}
+    \]  
+    \item Contrary to a fracture propagation event, where there is existing void, and fracture just keeps growing along the existing fracture, a nucleation event has no existing fracture to propagates along. As a result, it is different to predict nucleation event. We assume that a nucleation event is primarily influenced by the local structure at the atomic level of the material. And a Recurrent Neural Network model is built to identify these latent structures. Detailed explanation is presented in the method section.
+    
 \end{itemize}
 \end{itemize}
 
@@ -23,6 +23,8 @@ Given the large amount of simulation data generated from LAMMPS (Large-scale Ato
 \begin{itemize}
 \item \textbf{Goal 2:} \emph{Predicting Fracture Propagation} 
 \begin{itemize} 
+    \item Definition of fracture in a dynamic setting:
+    
     \item Method: We are going to use a derivation of recurrent neural network(RNN), the long-short term memory networks(LSTM) to predict the propagation of an existing interstices. The reason why we choose LSTM over RNN is that it's a more flexible model and can control how much of a memory we would like the model to contain when making predictions.
     
     
