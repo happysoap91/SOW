@@ -1,6 +1,4 @@
-$\indent$ In this project, our ultimate goal is using machine learning methods to learn from Molecular Dynamics simulations, so that the trained machine learning models can produce rapid predictions of simulation results without the extensive computation that simulations would take. To realize the ultimate goal, we separate it into two sub-goals. One of the sub-goals is to predict fracture nucleation and the other one is to predict fracture propagation. The nucleation event is where fractures will emerge and must be predicted in a certain region and fracture propagation is a continuing process of atoms being included in the fracture region, also known as the process zone. And we will use two different models to address these problems respectively. 
-
-
+$\indent$ In this project, our ultimate goal is using machine learning methods to learn from Molecular Dynamics simulations, so that the trained machine learning models can produce rapid predictions of simulation results without the extensive computation that simulations would take. To realize the ultimate goal, we separate it into two sub-goals. One of the sub-goals is to predict fracture nucleation and the other one is to predict fracture propagation. The nucleation event is where fractures will emerge and must be predicted in a certain region and fracture propagation is a continuing process of atoms being included in the fracture region, also known as the process zone.
 
 \begin{itemize}
 \item \textbf{Goal 1:} \emph{Predicting Fracture Nucleation Events} 
@@ -11,6 +9,5 @@ A nucleation event is where a fracture emerges from the structure without any pr
 \begin{itemize}
 \item \textbf{Goal 2:} \emph{Predicting Fracture Propagation} 
 
-Once a fracture nucleates in the material, it propagates along the existing fracture, as stress keeps being applied uni-axially. Our goal is to identify which atoms will be positive as the fracture propagates. In this case, the input will be a time series of features. And the Long-short Term Memory(LSTM) neural networks is used to capture the dynamic process of the fracture propagation. The reason why we choose LSTM over RNN is that it's a more flexible model and can control how much of a memory we would like the model to contain when making predictions.
-
+Once a fracture nucleates in the material, it propagates along the existing fracture, as stress keeps being applied uni-axially. Our goal is to identify which atoms will be associated with the fracture region as it propagates over time. In this case, the input will be a time series of features. A Long-short Term Memory(LSTM) neural network will be used to capture the dynamic process of the fracture propagation. The main benefit of using LSTM is that it is a more flexible model and we are able control how much memory we would like the model to contain when making predictions.
 \end{itemize}

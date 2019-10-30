@@ -1,4 +1,4 @@
-$\indent$ Fracture process in atomic scale is a complex process controlled by the local structure of atoms, stress applied, and forces between atoms and the strength of atomic bonds. Given the large amount of simulation data generated from LAMMPS (Large-scale Atomic/Molecular Massively Parallel Simulator) \cite{PAMD}, which is a molecular dynamics program from Sandia National Laboratories, we are going to develop a machine learning algorithm to predict the fracturing process.
+$\indent$ Fracturing at the atomic scale is a complex process controlled by the local structure of atoms, applied stress, forces between atoms and the strength of atomic bonds. Given the large amount of simulation data generated from LAMMPS (Large-scale Atomic/Molecular Massively Parallel Simulator) \cite{PAMD}, which is a molecular dynamics program from Sandia National Laboratories, we are going to develop a machine learning algorithm to predict the fracturing process.
 
 \begin{itemize}
 
@@ -37,39 +37,38 @@ In order to be able to predict the atomic scale fracture nucleation and propagat
 A possible reduced graph representation would be to consider only silicon atoms as nodes and each of their bonds as edges. This would reduce computational complexity. We would take into account the data regarding $Q_n$ to construct this graph.
     
 \end{itemize}
-
+\bigskip
 
 \item \textbf{The Ground Truth}
 
-In this project, we will use supervised learning technique. To train a supervised machine learning model, examples of input-output pairs are needed. Each of these pairs have the input and the desired output for the corresponding input. So, the ground truth, denoted as $y_i$ for atom $i$, is the desired output we want our model to predict. To be more specific, it is defined as whether or not an atom is part of a fracture at a certain time step. If $y_i$ is in state 0, it means it is not part of a fracture, and $y_i$ is in state 1, it means it is part of a fracture. So $\mathbf{y}$ is a vector of length $n$, where $n$ is the total number of atoms at each time step. And $y_i\in\{0,1\}$ for $i\in\{1,2,3,...,n\}$. This can be different as to which problem we are trying to solve. In the goals section, we state that our goal is split into two problems. As a result, the ground truth can be a little different in each setting.
+In this project, we will use supervised learning technique. To train a supervised machine learning model, examples of input-output pairs are needed. Each of these pairs have the input and the desired output for the corresponding input. So, the ground truth, denoted as $y_i$ for atom $i$, is the desired output we want our model to predict. To be more specific, it is defined as whether or not an atom is part of a fracture at a certain time step. If $y_i$ is in state 0, it means it is not part of a fracture, and $y_i$ is in state 1, it means it is part of a fracture. So $\mathbf{y}$ is a vector of length $n$, where $n$ is the total number of atoms at each time step. And $y_i\in\{0,1\}$ for $i\in\{1,2,3,...,n\}$. This can be different as to which problem we are trying to solve. In the goals section, we state that our goal is split into two , fracture nucleation and propagation. As a result, the ground truth can be a little different in each setting, respectively.
 
 \begin{itemize}
     \item \textbf{In nucleation}
     
-    Nucleation event is the creation of void in the material. As stress is applied uni-axially, bonds break and form among atoms. Correspondingly, some atoms have growing void among themselves and others are squished into more dense regions. And fracture nucleates alongside the void occurrence. 
+    Nucleation event is the creation of void in the material. As stress is applied uni-axially, bonds break and form among atoms. Correspondingly, some atoms have growing void among themselves and others are squished into more dense regions as the fracture nucleates alongside the void occurrence. 
     \begin{figure}
     \centering
     \noindent
-    \includegraphics[width=0.7]{volcolor.PNG}
-    \caption{Crack propagation}
+    \includegraphics[width=8cm, height=6cm]{picture/volcolor.PNG}
+    \caption{Red atoms have vol greater than 42}
     \label{crack_Fig}
 \end{figure}
     As a result, we define the ground truth using a local density measure, which is the Voronoi cell volume $v_i$, around a certain atom $i$. Previously, flexibility volume has been used as an indicator for prediction of stress driven shearing in atomic structures of glasses \cite{NatCom}. It is a volume measure because the data is a 3D graph and we are measuring the volume of the polyhedron centered by the atom. So, if $v_i$ exceeds a certain threshold, then atom $i$ is defined as part of a nucleation event, which also means $y_i=1$. In this project, we set the threshold to be 3 standard deviation from the mean value, $\mu_v$, at the current time step.
-    \textbf{1. Could insert a figure here demonstrating 3D Voronoi volume}
-    \textbf{2. Could insert 3 figures demonstrating why we choose 3sd as our threshold}
+    %\textbf{1. Could insert a figure here demonstrating 3D Voronoi volume}
     \[
     nuc_v = \frac{(v_i - \mu_v)}{\sigma_v}
     \]
     And then the ground truth can be defined as:
     \[
     y_i = \begin{cases}
-      0 & \text{if nuc_v$_i \le 1 $}\\
-      1 & \text{if nuc_v$_i \ge 1 $}\\
+      0 & \text{if }(nuc_v)_i \le 1 \\
+      1 & \text{if }(nuc_v)_i > 1 \\
     \end{cases} 
     \]  
     \item \textbf{In propagation}
     
-    Contrary to a fracture nucleation event, the propagation is where the fracture grows along the existing fracture. Some atoms are part of the fracture but they are surrounded by other atoms, which results in a small Voronoi volume. To compensate for these false negatives, we will look at local neighborhoods of the atoms considered as part of the fracture. As a result, we use the K-nearest Neighbors (KNN) algorithm to identify positive atoms, meaning atoms with $y_i=1$. \textbf{Insert a figure showing an atom and its k-nearest neighbors}.
+    Contrary to a fracture nucleation event, the propagation is where the fracture grows along the existing fracture. Some atoms are part of the fracture but they are surrounded by other atoms, which results in a small Voronoi volume. To compensate for these false negatives, we will look at local neighborhoods of the atoms considered as part of the fracture. As a result, we use the K-nearest Neighbors (KNN) algorithm to identify positive atoms, meaning atoms with $y_i=1$.
     
 \end{itemize}
 
@@ -151,6 +150,7 @@ Our algorithm will look like this:
 4. For every feature wrongly predicted, update the weight. 
 \\
 5. Repeat until complete. 
+\newpage
 \item \textbf{Method for Predicting the Voronoi Cell Volume Dynamically}
 \bigskip
 \\
@@ -160,31 +160,20 @@ Due to the dynamical structure of our graph changing over each time step we will
 \begin{figure}
     \centering
     \noindent
-\includegraphics[width=0.4\textwidth]{picture/frac_prop1.PNG}\hspace{0.2\textwidth}%
-\includegraphics[width=0.4\textwidth]{picture/frac_prop2.PNG}\\[2em]
-\includegraphics[width=0.4\textwidth]{picture/frac_prop3.PNG}\hspace{0.2\textwidth}%
-\includegraphics[width=0.4\textwidth]{picture/frac_prop4.PNG}\par
-    \caption{Crack propagation}
+\includegraphics[width=12cm , height = 5cm]{picture/rnn.PNG}
+    \caption{Representation of a Recurrent Neural Network}
     \label{rnn}
 \end{figure}
-
-
-
-
-
-
 
 After we have obtained a time series of predicted $v_i$, we compare the prediction with the threshold, which is 3 standard deviation from the mean, to determine whether a certain atom is part of a fracture or not. Similar with what is defined before:
     \[
     \hat{y_i} = \begin{cases}
-      0 & \text{if nuc_v$_i \le 1 $}\\
-      1 & \text{if nuc_v$_i \ge 1 $}\\
+      0 & \text{if }(nuc_v)_i \le 1\\
+      1 & \text{if }(nuc_v)_i > 1\\
     \end{cases} 
     \]  
 
-\bigskip
-\bigskip
-\\
+\newpage
 
 \item \textbf{Machine Learning from start to finish}
 \bigskip
