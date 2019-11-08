@@ -1,23 +1,19 @@
-$\indent$ Fracturing at the atomic scale is a complex process controlled by the local structure of atoms, applied stress, forces between atoms and the strength of atomic bonds. Given the large amount of simulation data generated from LAMMPS (Large-scale Atomic/Molecular Massively Parallel Simulator) \cite{PAMD}, which is a molecular dynamics program from Sandia National Laboratories, we are going to develop a machine learning algorithm to predict the fracturing process.
+Fracturing at the atomic scale is a complex process controlled by the local structure of atoms, applied stress, forces between atoms and the strength of atomic bonds.  In order to predict the dynamics of the fracturing process, we will develop graph-based ML algorithms that learn from LAMMPS simulation data,
 
-\begin{itemize}
+% Given the large amount of simulation data generated from LAMMPS (Large-scale Atomic/Molecular Massively Parallel Simulator) \cite{PAMD}, which is a molecular dynamics program from Sandia National Laboratories, we are going to develop a machine learning algorithm to predict the fracturing process.
 
-\item \textbf{Graph Representation}
+\subsection{Graph Representations}
 
+SiO$_2$ may be represented as a network of silicon and oxygen atoms, connected with chemical bonds.  Predicting atomic scale fracture dynamics can therefore be understood as predicting the evolution of the graph that describes this network.
+% In order to be able to predict the atomic scale fracture nucleation and propagation in silica-based glasses, we must first find an appropriate mathematical graph representation. 
 
-In order to be able to predict the atomic scale fracture nucleation and propagation in silica-based glasses, we must first find an appropriate mathematical graph representation. 
-\begin{itemize}
-    \item \textbf{Basic Graph Representation}
-    \\
-    \\
-    The most basic way to define a graph is naive. In one sample, we have a total number of $n$ atoms. An atom, either silicon or oxygen, is defined as a vertex $v_i$, where $0 \leq i \leq n-1$ and a set of such vertices is $\mathbf{\textbf{V}} = \{v_0,v_1,...v_{n-1}\}$. An edge, $e_i$ is defined as a chemical bond between two atoms. A set of such edges is $\mathbf{E} = \{e_0,e_1,...e_{n-1}\}$. As uni-axial stress is applied to the material, edges could break and form between any two vertices, where state 1 means an edge is broken and state 0 means an edge exists.
-    %Therefore, a set of active edges, defined as $\mathbf{E_a}$, includes all the edges that have broke or formed at least once, meaning they have changed their state, either from 1 to 0 or from 0 to 1 at one point. Similarly, $\mathbf{V_a}$ is defined as a set of active atoms.
-    As a result, the graph $\mathbf{\textbf{G}}$ is thus defined as a discrete set of vertices $\mathbf{V}$ connected by a set of edges $\mathbf{E}$. We can denote it as $\ \mathbf{G} = (\mathbf{V},\mathbf{E})$, where the size of the graph is $\ |\mathbf{V}| = n $.
-    \\
-    \\
-    A simplified example of our constructed graph could result like this:
-    \bigskip
-    \\
+\subsubsection{Basic Graph}
+
+One straightforward graph representation of the atomic system is as follows.  Consider a graph $G =(V,E)$.  Let each element of the node or vertex set $V$ represent an atom, whether silicon or oxygen.  Let each element of the edge set $E$ represent a chemical bond between two atoms.  The resulting structure is illustrated in Fig.~\ref{fig:basic_graph}.  Note that in this representation, there is additional label information attached to each node, consisting of the atom type: Si or O.
+
+\begin{figure}
+\centering
+\noindent
     \begin{tikzpicture}
       [scale=.8,auto=left,every node/.style={circle,fill=blue!20}]
       \node (n6) at (1,10) {Si};
@@ -31,156 +27,248 @@ In order to be able to predict the atomic scale fracture nucleation and propagat
         \draw (\from) -- (\to);
     
     \end{tikzpicture}
+\caption{Basic graph representation, where nodes denote either silicon or oxygen atoms and edges denote bonds between atoms.}
+\label{fig:basic_graph}
+\end{figure}
+
+As uniaxial stress is applied to the material, bonds can break and form, whereas atoms are conserved.  Thus, the vertex set remains constant, with size $|V|=n$ given by the total number of atoms in the system, whereas the edge set evolves in time.  We then define $E(t)$ to be the edge set at time step (snapshot) $t$, and $G(t) = (V,E(t))$ to be the graph at time step $t$.
+
+There are significant benefits to having vertices whose identities do not change over the course of the simulation.  When predicting whether or not an atom ends up on the boundary of a fracture, it is convenient to able to describe that atom by the same graph element at $t=0$ as at the time of prediction.  A drawback of this representation, however, is the resulting graph size for the samples that we will study.  Training an ML algorithm on graph inputs with 70,000 vertices may place excessive demands on computational resources.
+
+% Consider a sample of $n$ atoms.  Define an atom, whether silicon or oxygen, as a vertex $v_i$, where $0 \leq i \leq n-1$ and a set of such vertices is $\mathbf{\textbf{V}} = \{v_0,v_1,...v_{n-1}\}$. An edge, $e_i$ is defined as a chemical bond between two atoms. A set of such edges is $\mathbf{E} = \{e_0,e_1,...e_{n-1}\}$. As uni-axial stress is applied to the material, edges could break and form between any two vertices, where state 1 means an edge is broken and state 0 means an edge exists.
+    %Therefore, a set of active edges, defined as $\mathbf{E_a}$, includes all the edges that have broke or formed at least once, meaning they have changed their state, either from 1 to 0 or from 0 to 1 at one point. Similarly, $\mathbf{V_a}$ is defined as a set of active atoms.
+% As a result, the graph $\mathbf{\textbf{G}}$ is thus defined as a discrete set of vertices $\mathbf{V}$ connected by a set of edges $\mathbf{E}$. We can denote it as $\ \mathbf{G} = (\mathbf{V},\mathbf{E})$, where the size of the graph is $\ |\mathbf{V}| = n $.
+
     
-\item \textbf{Reduced Graph Representation} 
+\subsubsection{Reduced Graph Representation} 
 
-A possible reduced graph representation would be to consider only silicon atoms as nodes and each of their bonds as edges. This would reduce computational complexity. We would take into account the data regarding $Q_n$ to construct this graph.
-    
-\end{itemize}
-\bigskip
+An alternative graph representation is to consider only silicon atoms as nodes, and bonds through bridging oxygen atoms as edges.  Given the atomic content of SiO$_2$, this representation reduces the number of vertices approximately threefold, to 25,000 or less.  It also simplifies the encoding of Q$_n$ information, as a node with degree $n$ necessarily bonds to $n$ bridging oxygens, and thus forms a Q$_n$ unit.
 
-\item \textbf{The Ground Truth}
+Like the basic graph representation described previously, this reduced representation keeps the number of vertices constant.  On the other hand, it does not explicitly track bonds that are formed and broken at each time step: if a bond is broken in an Si--O--Si bridge, this representation will not distinguish between the case where the first bond, or the second bond, or both, are broken.  Similarly, the coordination number of an Si atom will not be given explicitly by node degree.  However, this information can, if needed, be encoded as feature information (see below).
 
-In this project, we will use supervised learning technique. To train a supervised machine learning model, examples of input-output pairs are needed. Each of these pairs have the input and the desired output for the corresponding input. So, the ground truth, denoted as $y_i$ for atom $i$, is the desired output we want our model to predict. To be more specific, it is defined as whether or not an atom is part of a fracture at a certain time step. If $y_i$ is in state 0, it means it is not part of a fracture, and $y_i$ is in state 1, it means it is part of a fracture. So $\mathbf{y}$ is a vector of length $n$, where $n$ is the total number of atoms at each time step. And $y_i\in\{0,1\}$ for $i\in\{1,2,3,...,n\}$. This can be different as to which problem we are trying to solve. In the goals section, we state that our goal is split into two , fracture nucleation and propagation. As a result, the ground truth can be a little different in each setting, respectively.
+\subsubsection{Additional Graph Formulations}
+
+We will also explore additional means of representing the network.  One possibility may be in terms of ring structure.  Ebrahem et al.~\cite{ebrahem2018influence} have studied medium-range order in silica glasses, expressed by the sizes of rings of alternating Si and O atoms, which correspond to cycles in the two graph representations discussed above.  These ring size statistics appear to influence the tensile strength of SiO$_2$, with a flatter distribution of sizes accelerating the fracturing process, and a more sharply peaked distribution (larger number of medium-sized rings) delaying it.
+
+It is possible that, by letting vertices represent rings with vertex labels describing ring size, we may obtain useful predictions of fracture locations. This approach would provide a very significant reduction of graph size.  It would have the limitation, however, that the vertex set would not remain constant from one time step to the next.  As bonds break and form, the composition of the rings change, and it may be challenging to interpret what a particular $t=0$ ring becomes at a later time.
+
+% It is also shown that when the quench rate increases there was an increase in the number of large-sized rings and a decrease in the number of medium-sized rings. The change in the number of small-sized rings was minimal. Since there is larger void in large-sized ring, it can be stretched and deformed more than the medium-sized ring. However, a medium-sized ring can take more per unit stress while tensile is applied, so it has more strain energy \cite{mWilson_continuum_stress}.
+
+% Typically in these silicate glasses there exists a structure where silicon (Si) is surrounded by four oxygen (O) atoms forming a tetrahedron seen in Figure 1. These tetrahedra share one common O atom if they are neighbors. A ring forms if a group of tetrahedra share common O atoms, and the size of these rings is computed based on how many Si atoms are in the ring. A large ring has 11 and 12 Si atoms, medium rings have 5 and 6, and small rings have 1 or 2. An atom is denoted as under-coordinated if the number of its constraints is lower than 4, and over-constrained, if greater than 4. \cite{pedone2015dynamics}
+% \begin{figure}
+%     \centering
+%     \noindent
+%     \includegraphics[width=12cm, height=6cm]{picture/tetra.JPG}
+%     \caption{Example of a primitive sixfold ring (left), example of a primitive twelve-fold ring
+% (right) \cite{ebrahem2018influence}}
+%     \label{crack_Fig}
+% \end{figure}
+
+\subsection{Feature Description}
+\label{subsec: Features}
+
+% To use ML algorithms, we want to examine features of our system such as centrality, volume, and structure.
+
+Given a graph representation, we may associate features with the nodes (as well as, in principle, the edges) of the graph.  Our ML algorithm can use these features to describe data points in the training set, learning a function that maps feature values to an output label.  The challenge is to identify features that are likely to have predictive value for the output label of interest, namely whether a node is on the boundary of a fracture.
+
+%For instance, given $k$ features, a particular vertex $v_i$ may be described as a point $x_i\in\mathbb{R}^k$.  Predicting whether that vertex is on the boundary of a fracture at a subsequent time then corresponds to learning a function $y_i=f(x_1,\dots,x_n)$, where $y_i$ is the 
+
+The work of previous CGU Math Clinic projects~\cite{valera2018machine,schwarzer2019learning} on graph-based ML for fracture prediction has suggested that different categories of features can be useful. Some of these are quantities that describe physical properties of an atom.  Others are local topological measures, that describe the network structure in the immediate proximity of a node. Finally, there are global topological measures, that describe ``centrality'' properties quantifying the importance of a node to network processes on the network such as communication or flow.
+
+We propose a range of candidate features that are meaningful both for the basic and for the reduced graph representations.  For other formulations, such as in terms of ring structure, further study will be needed to determine appropriate quantities.  Furthermore, not all features that we initially propose will be significant for model predictions.  After running our ML algorithms based on these features, we will perform feature analysis to determine which characteristics of the system play an important role in the accuracy of predictions.
+
+\subsubsection{Physical Features}
+\label{subsubsec: Physical Features}
 
 \begin{itemize}
-    \item \textbf{In nucleation}
+%    \item \textbf{Atom type:} In the basic graph representation, vertices can denote both silicon and oxygen atoms.  In order to distinguish between them, a binary-valued feature may be assigned to a vertex that identifies which type of atom it is.  This feature would not be needed in the reduced graph representation, where vertices necessarily denote silicon atoms.
     
-    Nucleation event is the creation of void in the material. As stress is applied uni-axially, bonds break and form among atoms. Correspondingly, some atoms have growing void among themselves and others are squished into more dense regions as the fracture nucleates alongside the void occurrence. 
+    \item \textbf{Cell volume:} A local density measure is given by the Voronoi diagram that partitions the system into polygonal cells surrounding each atom.  We define $v_i(t)$ to be the Voronoi cell volume of atom $i$ at time $t$.  These cell volumes can help our model understand which atoms are closely associated with fracture nucleation, by learning how and where volume increases.  When a fracture emerges, atoms on its boundary will have rapidly increasing cell volumes representing newly available space in the void.
+    
+    Note that while atoms on the boundary of a free surface can also have very large cell volumes, these volumes will already be large at $t=0$ and will typically not grow during the simulation.  A model that correctly learns the dynamics of cell volumes should therefore avoid mistaking the free surface for a fracture.
+
+    \item \textbf{Atom displacement:} As fractures nucleate, atoms on its boundary may undergo more rapid displacement than do others.  Let $\mathbf{r}_i(t)$ be the vector representing the $(x,y,z)$ position of atom $i$ at time $t$. The physical displacement of an atom from one time step to the next, $\Delta \mathbf{r}(t)=\mathbf{r}_i(t)-\mathbf{r}_i(t-1)$, could help in predicting where and when fractures grow. 
+
+    \item\textbf{Stress tensor:} The Cauchy stress tensor $\boldsymbol{\sigma}$ describes the local stress at each atom.  It may be the case that, prior to fracture growth, atoms that will ultimately form the fracture boundary undergo changes in values of their stress tensor components~\cite{elastic_fracture}. Note that, even in the absence of fracturing, considerable local fluctuations may occur in these values from one atom to the next.  Some form of spatial averaging may help in reducing these fluctuations.
+
+    \item\textbf{Charge:} The emergence of fractures arises most directly from bond breaking.  The charge of an atom plays a crucial role in this.  As with the stress tensor components, we expect that atoms on a fracture boundary may, prior to fracture growth, exhibit characteristic changes in charge value.
+%    We will take the charge of each atom in account to examine what effect each charge has in forming a fracture. The real values in our data represent the effects of quantum fluctuations from shifts of electron clouds. It is important to note that high charges indicate strong forces between atoms. Therefore, there is more activity. We want to investigate whether high charges are directly associated to active sets.
+\end{itemize}
+
+\subsubsection{Local Topological Features}
+
+\begin{itemize}
+    \item \textbf{Coordination number:} The coordination number of an atom is the number of neighboring atoms to which it is bonded.  Undercoordination and overcoordination could play a role in determing whether an atom will be on the boundary of a fracture.
+    
+    In our basic graph representation, the coordination number is equivalent to the degree of a vertex.  Even though it is implicit in the graph structure, however, there can be value in including it as an explicit feature for an ML algorithm to learn.
+    
+    In our reduced graph representation, the coordination number cannot be inferred from the graph at all, and must be included explicitly.
+% We will use Degree Centrality Measures. These measures indicates how connected a vertex is by counting the direct links each vertex has to other vertices. Our network will be simplified to active bonds, therefore, the more links a vertex has to other vertices, the more connected that vertex is to active bonds. This will allow us to better understand where a fracture propagates from.
+
+    \item\textbf{Number of bridging oxygens:} In a Q$_n$ unit, an Si atom is surrounded by $n$ bridging O atoms, each forming an Si--O--Si group.  The value of $n$ therefore supplies crucial network connectivity information. 
+    
+    In our reduced graph representation, the number of bridging oxygens is equivalent to the degree of a vertex.  Even though it is implicit in the graph structure (as with coordination number in the basic graph representation), ML algorithms may benefit from having it as an explicit feature.
+    
+    In our basic graph representation, this quantity would only be of direct use for those vertices that denote silicon atoms.  However, by setting it to a value of 0 for oxygen atoms, it could provide a means of distinguishing which type of atom a vertex represents: Si or O.
+
+    \item\textbf{$k$th neighbor quantities:} A crucial assumption in our modeling approach is that structure beyond nearest-neighbor information can help in predicting fracture nucleation.  We therefore propose considering not only the number of bridging O atoms directly bonded to an Si atom, but also the number within a given number of bonds from an Si atom.
+    
+    In the reduced graph representation, a qualitatively similar quantity would be the following.  For an atom $i$ at time $t$, let $b^{(k)}_i(t)$ be the number of vertices whose path length to $i$ consists of at most $k$ edges. This defines a class of features for different values of $k$.  For $k=1$, $b^{(1)}_i(t)$ would simply be the vertex degree, i.e.,\ the number of bridging oxygens around $i$.  For increasing $k$, these features would consider local neighborhoods (around $i$) of increasing size.
+    
+\end{itemize}
+
+\subsubsection{Global Topological Features}
+
+% In network theory, centrality is used to quantify the importance of nodes to processes on the network, such as communication or flow.  Previous research on fracture networks has found that different forms of centrality can help predict properties related to fractures~\cite{santiago2016,valera2018machine}. An example could be a specific silicon atom that is at the center of where a fracture nucleates. Identifying the vertices with the highest centrality will allow us to predict fracture nucleation.
+
+% More specifically, the vertex with the highest centrality degree would be surrounded by the most active bonds. Bonds that are not active do not necessarily contribute to the nucleation of a fracture \cite{valera2018machine}.
+    
+\begin{itemize}
+    
+    \item \textbf{Eigenvector centrality:} The influence of a specific node on a network is described not only by local properties of the node.  For instance, a node may have high degree but still not play a central role in processes on the network such as flow or communication.  Eigenvector centrality is one way of quantifying a node's global influence.
+    
+    Given an adjacency matrix $\mathbf{A}$ for a graph, where element $A_{ij}=1$ if an edge connects nodes $i$ and $j$ and $A_{ij}=0$ otherwise, the eigenvector centrality $e_i$ of node $i$ is the $i$th component of the leading eigenvector of $A$.  It satisfies
+    \begin{equation}
+    \lambda_{\max}(\mathbf{A}) e_i = \sum_{j=1}^n A_{ij}e_j,
+    \end{equation}
+    where $\lambda_{\max}(\mathbf{A})$ is the largest eigenvalue of $\mathbf{A}$.  The recursive nature of this equation reflects the intuition that an influential node is one that links to other influential nodes.  Previous research on fracture networks has found that eigenvector centrality can help describe a node's influence on certain kinds of fracture behavior~\cite{santiago2016,valera2018machine}, suggesting that it could be a relevant feature for predicting fracture growth.
+    
+%    Additionally, we want to use the local properties of the atoms as features. The local features are available from the molecular dynamics post processing data. This includes the size of a fracture and the speed of propagation. We aim to use eigenvector centrality measure which will lend a deeper understand as to what the connections a vertex with a high degree centrality has to the entire network. This is because eigenvector centrality measures the influence that a vertex has on an entire graph. Therefore, we can examine vertices that are associated with fractures and analyze what their effect is on the overall behavior of the glass.
+    
+%    Eigenvector Centrality Measures indicates how much influence a specific vertex has on the entire network. For example, consider a vertex that has a high degree centrality, but does not necessarily affect the network. Therefore, it must have a low eigenvector centrality and does not contribute to a fracture that significantly damages the network. For this reason, we want to consider which vertices have a high eigenvector centrality measure in connection with degree measures. Doing so will lead us to a deeper understanding of where fractures nucleate and what the propagation of  these fractures looks like.
+    
+    \item\textbf{Betweenness centrality:} A further global measure of node influence is the number of paths in the network that pass through that node.  This reflects the node's importance in communication across the network, which is relevant when the effects of uniaxial stress are distributed over the network.  Betweenness centrality counts the fraction of geodesic paths (paths with fewest possible edges) that include a given node.
+    
+    If $\pi_{uv}$ is the total number of geodesic paths connecting node $u$ to node $v$, and $\pi_{uv}(i)$ is the number of such paths that pass through node $i$, then the betweenness centrality of node $i$ is given by
+    \begin{equation}
+    \beta_i = \sum_{\substack{u,v = 1 \\ u\neq i\neq v }}^n \frac{\pi_{uv}(i)}{\pi_{uv}}.
+    \end{equation}
+    If the simulated sample had free boundary conditions in the direction of loading ($x$ direction), it is possible that relevant paths would only be those between a node $u$ along the left-hand boundary and a node $v$ along the right-hand boundary.  Since we are instead working with periodic boundary conditions in the $x$ directions, we will explore other possible ways of limiting the paths counted in the sum above.
+
+\end{itemize}
+
+\subsection{Extracting Ground Truth}
+
+
+In this project, we will use a supervised learning technique. To train a supervised machine learning model, examples of input-output pairs are needed. Each of these pairs have the input and the corresponding desired output, which we call the ground truth.
+
+In our model, the most straightforward ground truth is an indicator variable $\phi_i(t) \in\{0,1\}$, specifying whether or not atom $i$ is part of a fracture at time $t$.
+%If $y_i=0$ is in state 0, it means it is not part of a fracture, and $y_i$ is in state 1, it means it is part of a fracture.
+Given a system with $n$ atoms, $\boldsymbol{\phi}(t)$ is a binary vector of length $n$.  An important consideration, however, is that the simulation data described in Section~\ref{sec: Data} does not directly give ground truth information.  Instead, the ground truth must be extracted from other simulation output.
+
+A fracture involves the creation of a void in the material. When stress is applied uniaxially, bonds break and form.  As a fracture nucleates, some atoms are on the boundary of the emerging void, while others are compressed into denser regions.  Consequently, we define the ground truth using a local density measure closely related to the first of the physical features described above.  Consider the Voronoi cell volume $v_i(t)$ of atom $i$ at time $t$.  When this volume exceeds a certain threshold, we consider atom $i$ to be part of a fracture event.  Figure~\ref{fig:crack_vol} highlights in red the atoms that would be identified in this way with a fixed threshold value, on a snapshot from a dry simulation with fully periodic boundary conditions.
+
     \begin{figure}
     \centering
     \noindent
     \includegraphics[width=8cm, height=6cm]{picture/volcolor.PNG}
-    \caption{Red atoms have vol greater than 42}
-    \label{crack_Fig}
-\end{figure}
-    As a result, we define the ground truth using a local density measure, which is the Voronoi cell volume $v_i$, around a certain atom $i$. Previously, flexibility volume has been used as an indicator for prediction of stress driven shearing in atomic structures of glasses \cite{NatCom}. It is a volume measure because the data is a 3D graph and we are measuring the volume of the polyhedron centered by the atom. So, if $v_i$ exceeds a certain threshold, then atom $i$ is defined as part of a nucleation event, which also means $y_i=1$. In this project, we set the threshold to be 3 standard deviation from the mean value, $\mu_v$, at the current time step.
-    %\textbf{1. Could insert a figure here demonstrating 3D Voronoi volume}
-    \[
-    nuc_v = \frac{(v_i - \mu_v)}{\sigma_v}
-    \]
-    And then the ground truth can be defined as:
-    \[
-    y_i = \begin{cases}
-      0 & \text{if }(nuc_v)_i \le 1 \\
-      1 & \text{if }(nuc_v)_i > 1 \\
+    \caption{Atoms in red are those with Voronoi cell volume $v_i>42$.  Dark areas are voids that represent fractures.}
+    \label{fig:crack_vol}
+    \end{figure}
+    
+In order to establish the ground truth, we will set the threshold value for a given time $t$ to be equal to three standard deviations above the mean Voronoi cell volume at that time.  Thus, we test whether the standardized cell volume
+    \begin{equation}
+    \hat{v}_i(t) = \frac{v_i(t) - \mu_v(t)}{\sigma_v(t)} > 3,
+    \end{equation}
+where $\mu_v(t)$ is the mean and $\sigma_v(t)$ is the standard deviation of $v_i(t)$ over all $i\in\{1,\dots,n\}$.  Note that in the postprocessed nucleation data supplied with the simulations, this is equivalent to testing whether the quantity in the field {\tt nuc\_v} exceeds 1.
+
+Because of the effects of free surfaces discussed in Section~\ref{subsubsec: Physical Features} above, $v_i(t)$ must be modified to disregard cell volumes that are large because they are on the boundary of a surface rather than a fracture.  Since these cell volumes do not significantly change over time, we define a new quantity that subtracts out the $t=0$ value, $v'_i(t) = v_i(t)-v_i(0)$, and instead test whether
+\begin{equation}
+    \label{eqn: cell volume}
+    \hat{v}'_i(t) = \frac{v'_i(t) - \mu_{v'}(t)}{\sigma_{v'}(t)} > 3.
+\end{equation}
+The ground truth can then be defined:
+\begin{equation}
+    \label{eqn: ground truth}
+    \phi_i(t) = \begin{cases}
+      0 & \text{if }\hat{v}'_i(t) \le 3 \\
+      1 & \text{if }\hat{v}'_i(t) > 3 \\
     \end{cases} 
-    \]  
-    \item \textbf{In propagation}
-    
-    Contrary to a fracture nucleation event, the propagation is where the fracture grows along the existing fracture. Some atoms are part of the fracture but they are surrounded by other atoms, which results in a small Voronoi volume. To compensate for these false negatives, we will look at local neighborhoods of the atoms considered as part of the fracture. As a result, we use the K-nearest Neighbors (KNN) algorithm to identify positive atoms, meaning atoms with $y_i=1$.
-    
-\end{itemize}
+\end{equation}
 
+We will apply two further corrections to $\phi_i(t)$, to limit the case of false negatives (where atoms on the boundary are identified as $\phi_i(t)=0$) as well as false positives (where atoms not on the boundary of a fracture are identified as $\phi_i(t)=1$).
 
-\item \textbf{Feature Description}
-\bigskip
+The false negative case occurs when an atom is at the boundary of a fracture, but is surrounded by a sufficient number of other nearby atoms that its Voronoi cell volume does not extend out into the void.  To account for this, we will consider a small neighborhood around each positively identified atom $i$.  Any other atom whose path length to $i$ consists of fewer than a small number of edges (such as 2 or 3) will be considered to be on the boundary as well.
 
-To use ML algorithms, we want to examine features of our system such as centrality, volume, and structure.
+The false positive case occurs early in the simulation, prior to nucleation, when the standard deviation $\sigma_{v'}(t)$ is very small, and atoms can be identified as positive purely due to spatial fluctuations in density.  To reduce this problem, we use the fact that an atom on the boundary of a fracture at time $t$ is expected to remain on the boundary of a fracture for the remainder of the simulation.  If an atom is positively identified, we will test whether it remains positively identified for the majority of the remaining simulation times.  If not, it will not be considered to be on the boundary.
 
-\begin{itemize}
-    \item \textbf{Centrality:} In graph theory, centrality is used to identify the most important vertices. An example could be a specific silicon atom that is at the center of where a fracture nucleates. Identifying the vertices with the highest centrality will allow us to predict fracture nucleation.
-    
-    \bigskip
-    
-    More specifically, the vertex with the highest centrality degree would be surrounded by the most active bonds. Bonds that are not active do not necessarily contribute to the nucleation of a fracture \cite{valera2018machine}.
-    
-    \begin{itemize}
-        \item \textbf{Degree Centrality Measures:} We will use Degree Centrality Measures. This measure indicates how connected a vertex is by counting the direct links each vertex has to other vertices. Our network will be simplified to active bonds, therefore, the more links a vertex has to other vertices, the more connected that vertex is to active bonds. This will allow us to better understand where a fracture propagates from. 
-    \end{itemize}
-    
-    \bigskip
-    
-    Additionally, we want to use the local properties of the atoms as features. The local features are available from the molecular dynamics post processing done. 
-    This includes the size of a fracture and the speed of propagation. We aim to use eigenvector centrality measure which will lend a deeper understand as to what the connections a vertex with a high degree centrality has to the entire network. This is because eigenvector centrality measures the influence that a vertex has on an entire graph. Therefore, we can examine vertices that are associated with fractures and analyze what their effect is on the overall behavior of the glass.
-    
-    \begin{itemize}
-        \item \textbf{Eigenvector Centrality Measures } Eigenvector Centrality Measures indicates how much influence a specific vertex has on the entire network. For example, consider a vertex that has a high degree centrality, but does not necessarily affect the network. Therefore, it must have a low eigenvector centrality and does not contribute to a fracture that significantly damages the network. For this reason, we want to consider which vertices have a high eigenvector centrality measure in connection with degree measures. Doing so will lead us to a deeper understanding of where fractures nucleate and what the propagation of  these fractures looks like.
-    \end{itemize}
-\item \textbf{$Nuc_v$ and $Nuc_d$:} Within our data set are the features $nuc_v$ and $nuc_d$ which are measures of volume and displacement. By color coding our system, we are able to examine how volume gives a measure of local density. As atoms move away from one another, the local density increases. This can be visualized in our graph. Therefore, volume can help our model understand which atoms are closely associated with fracture nucleation by examining how and where volume increases.
+Finally, we propose an alternative to extracting information from simulations on whether an atom is at a fracture boundary, and then training our algorithms using this ground truth.  Instead, we can simply adopt the cell volumes as ground truth, and train our algorithms to predict this.  Our predictions may then be postprocessed using Equations~(\ref{eqn: cell volume}) and (\ref{eqn: ground truth}) to determine which atoms are at fracture boundaries.  This could have the advantage of providing a more objective prediction, but involves solving a regression problem rather than merely a classification problem.
 
-\item\textbf{$Q_n$:} An additional feature in our data is $Q_n$ which allows us to quantify the structure. When considering the number of oxygen atoms bonded to a single silicon atom, $Q_n$ indicates the number of oxygen that are bridging one another. This is defined as an Si-O-Si group where the oxygen is bridging. This gives rise to the connectivity of our system.
+\subsection{Machine Learning Methods}
 
-\item\textbf{Stress Tensor:} Stress tensor defines the state of stress at a specific point of a material. We aim to examine the stress tensor at specific atoms which is provided to us in the data. By looking at this feature, we can see if there exists a range of stress tensor values that lead to a fracture. Doing so will provide more insight as to wear a fracture might occur as a result of the degree of stress that is applied to the glass \cite{mWilson_continuum_stress} \cite{elastic_fracture}.
+The objective of this project is to produce a surrogate model of the molecular dynamic simulations using supervised machine learning techniques. We propose to address our two goals listed in Section~\ref{sec: Goals} with two methods, respectively. First, we will use ensemble methods such as random forest to predict nucleation at a fixed future time step, given feature information at $t=0$.
+%We will use an ensemble of random forest to predict nucleation based on local structures.
+% Second, predict the Vonoroi volume of an atom, and use the prediction to interpret whether or not an atom is part of the fracture. Therefore this section of the methods will address our proposed ML architecture from start to finish.
+Second, we will use a recurrent neural network (RNN) with the long-short term memory (LSTM) mechanism, to learn the dynamic process of fracture propagation. % LSTM has the benefit of being a flexible model, where we can control how much memory we would like the model to contain when making predictions.
 
-\item\textbf{Charges:} We will take the charge of each atom in account to examine what effect each charge has in forming a fracture. The real values in our data represent the effects of quantum fluctuations from shifts of electron clouds. Charge plays a significant role in the bond between atoms. It is important to note that high charges indicate strong forces between atoms. Therefore, there is more activity. We want to investigate whether high charges are directly associated to active sets. 
-\end{itemize}
+\subsubsection{Random Forest for Predicting Fracture Nucleation}
+%\item \textbf{Method for Classifying whether or not a vertex is part of a fracture in the nucleation setting}
 
- We aim to predict a final fracture surface and nucleation points given an initial state. After the model has been created, we will begin feature analysis to determine which characteristics of our system play a significant role in the accuracy of our predictions.
-\\
-
-\item \textbf{Machine Learning Methods}
-\bigskip
-\\
-The culminating purpose of this project is to produce a surrogate model of the molecular dynamic simulations using supervised machine learning techniques. We propose to address our two goals listed above with two methods, respectively. First, use an ensemble of random forest to predict the nucleation based on local structures. Second, predict the Vonoroi volume of an atom, and use the prediction to interpret whether or not an atom is part of the fracture. Therefore this section of the methods will address our proposed ML architecture from start to finish.
-
-
-\begin{itemize}
-\bigskip
-\item \textbf{Method for Classifying whether or not a vertex is part of a fracture in the nucleation setting}
-\bigskip
-\\
 %Random forest. Boosting, bagging. 
-For the purpose of determining whether or not a vertex is associated with a fracture, we will implement ensemble based ML methods. The goal of ensemble methods is to combine predictions made by several features into one single learned estimator. With our feature selection being possibly quite large, we will find ensemble methods being the best option to predict fracture labels. 
-\bigskip
-\\
-Core ensemble methods include boosting and bagging. A "bagged" random forest method is generated by creating a tree from the features randomly drawn with replacement. Since our representation is graph like these trees make sense logically. 
-\bigskip
-\\
-Our algorithm will look like this:
-\\
-1. Take training set T with N features, with L models.
-\\
-2. For model $L _{1}$ let the number of input points $n_{1}$ $<$ $N$ for each $L_{n}$.
-\\
-3. For model $L_{n}$, create a training set by choosing $d_{l}$ features from T with replacement and train the model.
-\bigskip
-\\
-Adaboost however is a boosting method which learns from previous mistakes made during training. By learning previous mistakes the model can increase the weights of incorrectly predicted points from the training data. 
-\bigskip
-\\
-Our algorithm will look like this:
-\\
-1. Initialize weights of the features. 
-\\
-2. Train a decision tree.
-\\
-3. Find the error weighed rate and calculate the tree's weight in the overall ensemble. 
-\\
-4. For every feature wrongly predicted, update the weight. 
-\\
-5. Repeat until complete. 
-\newpage
-\item \textbf{Method for Predicting the Voronoi Cell Volume Dynamically}
-\bigskip
-\\
+For the purpose of determining whether or not a node is associated with a fracture, we will implement ensemble-based ML methods. The goal of ensemble methods is to combine predictions made by several features into one single learned estimator. With our feature selection being possibly quite large, we will find ensemble methods the best option to predict fracture labels. 
+
+Core ensemble methods include bagging and boosting. A ``bagged'' random forest method is generated by creating a tree from features randomly drawn with replacement. 
+% Since our representation is graph-like these trees make sense logically. 
+
+Our bagging algorithm will work as follows:
+
+\begin{enumerate}
+\item Take training set $T$ with $N$ features, with $L$ models.
+\item For model $L _{1}$ let the number of input points $n_{1}$ $<$ $N$ for each $L_{n}$.
+\item For model $L_{n}$, create a training set by choosing $d_{l}$ features from T with replacement and train the model.
+\end{enumerate}
+
+Adaboost, on the other hand, is a boosting method that learns from previous mistakes made during training. By doing so, the model can increase the weights of incorrectly predicted points from the training data.
+
+Our boosting algorithm will work as follows:
+
+\begin{enumerate}
+    \item Initialize weights of the features.
+    \item Train a decision tree.
+    \item Find the error weighed rate and calculate the tree's weight in the overall ensemble.
+    \item For every feature wrongly predicted, update the weight.
+    \item Repeat until complete. 
+\end{enumerate}
+
+%\item \textbf{Method for Predicting the Voronoi Cell Volume Dynamically}
+
+\subsubsection{Fracture Propagation}
 %RNN, 
-Due to the dynamical structure of our graph changing over each time step we will be implementing a Long short-term memory(LSTM) neural network to predict $v_i$ of the atoms at each time step. The input will be a time series of Voronoi cell volume for all the atoms at time step $t$, which is a vector of length $n$.
+Due to the dynamical nature of our graph changing over each time step, we will be implementing an RNN to predict the ground truth at each time step. An illustration of the basic RNN architecture is shown in Figure~\ref{fig:rnn}.  The main idea behind an RNN is that it trains on an entire time series, learning the dynamics of a process which it stores using a ``memory'' of internal states.  The LSTM mechanism is a refinement of this memory, allowing the neural network to give added weight to information learned in more recent time steps.
 
 \begin{figure}
     \centering
     \noindent
 \includegraphics[width=12cm , height = 5cm]{picture/rnn.PNG}
     \caption{Representation of a Recurrent Neural Network}
-    \label{rnn}
+    \label{fig:rnn}
 \end{figure}
 
-After we have obtained a time series of predicted $v_i$, we compare the prediction with the threshold, which is 3 standard deviation from the mean, to determine whether a certain atom is part of a fracture or not. Similar with what is defined before:
-    \[
-    \hat{y_i} = \begin{cases}
-      0 & \text{if }(nuc_v)_i \le 1\\
-      1 & \text{if }(nuc_v)_i > 1\\
-    \end{cases} 
-    \]  
 
-\newpage
+The training input to our RNN will be a time series of graphs based on simulation data, where nodes will be labeled with the full set of feature values described in Section~\ref{subsec: Features}.  For every time $t$, the RNN outputs feature and ground truth values for time $t+1$.  These are compared with simulation results, from which a loss function is calculated and the internal neural network weights are updated.
 
-\item \textbf{Machine Learning from start to finish}
+Once the RNN is trained and its weights are set, it is used for prediction.  The input at this point is simply the $t=0$ feature values, but the output is a time series of graphs, giving the full predicted evolution of features and ground truth.
+
+Note that certain of our features, such as atom displacement, are undefined at $t=0$ and thus are meaningful only as part of the training process.  Others, however, are well-defined at any individual time step.
+
+% Voronoi cell volume for all the atoms at time step $t$, which is a vector of length $n$.
+
+% After we have obtained a time series of predicted $v_i$, we compare the prediction with the threshold, which is 3 standard deviations from the mean, to determine whether a certain atom is part of a fracture or not. Similar with what is defined before:
+%    \[
+%     \hat{y_i} = \begin{cases}
+%       0 & \text{if }(nuc_v)_i \le 1\\
+%       1 & \text{if }(nuc_v)_i > 1\\
+%     \end{cases} 
+%     \]  
+
+\subsubsection{Algorithmic Architecture}
+% \item \textbf{Machine Learning from start to finish}
+
+The proposed architecture is as follows:
+
 \bigskip
-\\
-The proposed architecture is as follows
-\bigskip
-\\
+
+\begin{center}
 \tikzstyle{decision} = [diamond, draw, fill=blue!20, 
     text width=4.5em, text badly centered, node distance=3cm, inner sep=0pt]
 \tikzstyle{block} = [rectangle, draw, fill=blue!20, 
@@ -213,28 +301,18 @@ The proposed architecture is as follows
     \path [line] (RF) -- (out);
     \path [line] (validate) |- node [near end] {} (out);
 \end{tikzpicture}
+\end{center}
 
-\bigskip
-    1. First we analyze and determine features from the MD data.
-    \\
-    2. Extract the features and prepare data for training. 
-    \newline
-    3. Split the dataset into three sets: training, validation, and test.
-    \newline
-    4a. Train the training set using RF to predict which atoms are part of a fracture.
-    \newline
-    4b. Train the data using LSTM to predict vertices displacement.
-    \newline
-    5. Validate surrogate model using validation set. 
-    \newline
-    6. Feature analysis. Fine tune features which are deemed most important. 
-    \newline
-    7. Finalize surrogate model on test set. 
-
-
-
-
-\end{itemize}
-
-
-\end{itemize}
+\begin{enumerate}
+    \item Analyze and determine features from the MD data.
+    \item Extract the features and prepare data for training.
+    \item Split the dataset into three sets: training, validation, and test
+    \item
+    \begin{enumerate}
+        \item Train the training set using RF to predict which atoms are part of a fracture.
+        \item Train the data using LSTM to predict fracture evolution.
+    \end{enumerate}
+    \item Validate surrogate model using validation set.
+    \item Feature analysis. Fine tune features which are deemed most important. 
+    \item Finalize surrogate model on test set. 
+\end{enumerate}

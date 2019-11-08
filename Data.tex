@@ -1,19 +1,29 @@
 
-$\indent$ Sandia National Labs will provide the MD simulation data used for training the surrogate model. At the present time 100 simulations have been constructed each consisting a sample of a fracture at the atomic level. The training data is broken up into the following four parts:
+Sandia National Laboratories is providing the MD simulation results that we will use as training data for our ML models, as well as a set of Python scripts to facilitate data processing and loading the data into appropriate data structures. Simulations are generated using the LAMMPS code (Large-scale Atomic/Molecular Massively Parallel Simulator)~\cite{PAMD}.
+
+Each LAMMPS run simulates a sample of SiO$_2$ containing approximately 70,000 atoms, at a density of 2.2~g/cm$^3$, and occupying a volume of size 60~nm~$\times$ 25~nm $\times$ 25~nm. The simulations use the reactive force-field potential ReaxFF~\cite{ReaxFF}.  Starting from a crystalline state of stoichiometric quartz, MD simulates heating the system to a temperature of 4000~K for 200~ps, then quenching to 300~K over 1~ns (constant cooling rate 3.7~K/ps), and finally equilibrating at 300~K for 200~ps. This melt-quench procedure generates an amorphous silicate glass.  The simulation is performed using an \emph{NVT ensemble}, meaning that the number of atoms, volume, and temperature are kept constant while simulating the dynamics (LAMMPS successively resets the constant temperature during the cooling phase).  The system is then equilibrated at 300~K for 200~ps under an \emph{NPT ensemble}, meaning that the number of atoms, pressure, and temperature are kept constant~\cite{markpres}.
+
+Finally, the system is loaded in uniaxial tension along the $x$-axis (horizontal), at a strain rate of $5\times 10^8$~sec$^{-1}$, for a period of 1~ns.  The resulting strain of 0.5 is sufficient to induce fracture in all simulations, and to induce failure as well in some simulations, in which case the run is stopped at that point.
+
+Simulation steps are spaced 0.5~fs ($0.5 \times 10^{-15}$~s) apart, with snapshots recorded every 2000 steps, representing a spacing of $\Delta t = 1$~ps between snapshots.  The full 1~ns of mechanical loading therefore involves $2 \times 10^6$ simulation steps, or 1000 snapshots. At each snapshot, information recorded for each atom includes $x,y,z$ coordinates, charge, and stress tensor components, and bond connectivity~\cite{markpres}.  This information is supplied in raw form, and is also postprocessed to identify structural properties of the system such as newly formed/broken bonds, SiO$_n$ distribution, and Q$_n$ distribution.
+
+%The silicate is exposed to these conditions following uniform quenching process done at 3.7K/picoseconds. The quenching process is controlled in order to limit the variance in the arrangement of the tetrahedra structure \cite{ebrahem2018influence}. We have four different environmental conditions but all procedures start at equilibrium.
+
+Simulations are run under the following four sets of environmental conditions:
 
 \begin{enumerate}
-    \item Dry (vacuum), free surfaces on the y,z axis and periodic in the x direction.
-    \item Wet (H20 in interstices), free surfaces as above. 
-    \item Dry (vacuum), fully periodic (toroidal) in x,y and z axis.
-    \item Wet (H20 in interstices), fully periodic (toroidal) boundary conditions. 
+    \item Dry (vacuum), with periodic boundary conditions in the $x$ direction and free surfaces in the $y$ and $z$ directions.
+    \item Dry (vacuum), with fully periodic boundary conditions ($x$, $y$ and $z$ directions).
+    \item Wet (H$_2$O in interstices), with periodic boundary conditions in the $x$ direction and free surfaces in the $y$ and $z$ directions.
+    \item Wet (H$_2$O in interstices), with fully periodic boundary conditions ($x$, $y$ and $z$ directions).
 \end{enumerate}
 
-For each sample, uniaxel tension is performed until failure or up to .5 starin over 1\textit{ns} simulation time. 
+\noindent
+Note that in the (vacuum) example of Figure~\ref{fig:crack_prop}, where there are free surfaces in the $y$ and $z$ directions, fractures typically originate at a surface.  Under fully periodic boundary conditions, where there are no surfaces, fractures must necessarily nucleate within the bulk. For this reason, fully periodic boundary conditions model samples that are far from a surface, where the entire sample can be considered as a bulk material.
 
-The silicate is exposed to these conditions following uniform quenching process done at 3.7K/picoseconds. So although we have four different environmental conditions, the procedures starts at equilibrium.
-Each instance will contain snapshots of the atoms through time as well as information regarding charge, stress tensor and bond connectivity. 
+For each of the four environmental conditions above, 100 simulations are supplied as training data for our ML algorithms.  Each simulation corresponds to a different configuration, where the distribution of initial velocities is generated using a different random seed.  Running a single one of these simulations requires a total of approximately 10,000 processor hours at Sandia. Without the massively parallel capabilities of LAMMPS, each of these could take over a year to run.  Even with the parallel use of thousands of processors, generating one set of 100 simulations can involve weeks of clock time, motivating the need for rapid alternatives such as ML.
 
-Post processed data was also provided as well as Python scripts to create and modify simulation data. Each sample 
+% Post processed data was also provided as well as Python scripts to create and modify simulation data.
 
 
 % BUNCH OF STUFF ????

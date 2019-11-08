@@ -1,13 +1,23 @@
-$\indent$ In this project, our ultimate goal is using machine learning methods to learn from Molecular Dynamics simulations, so that the trained machine learning models can produce rapid predictions of simulation results without the extensive computation that simulations would take. To realize the ultimate goal, we separate it into two sub-goals. One of the sub-goals is to predict fracture nucleation and the other one is to predict fracture propagation. The nucleation event is where fractures will emerge and must be predicted in a certain region and fracture propagation is a continuing process of atoms being included in the fracture region, also known as the process zone.
+The objective of our project is to develop supervised learning methods, trained on MD simulation data, that generate rapid predictions of where and when atomic-scale fractures occur in samples of silicate glasses under stress.  We aim to generate these predictions under multiple environmental conditions, and to validate them on existing MD simulation results.  Ultimately, we hope to relate our predictions to specific features characterizing local atomic structure, thus providing new insight into how this local structure leads to fracture and failure.
+
+%In order to accomplish this, we will define features 
+% We aim to correlate
+We separate our overall objective into the following two goals:
+
+% $\indent$ In this project, our ultimate goal is using machine learning methods to learn from Molecular Dynamics simulations, so that the trained machine learning models can produce rapid predictions of simulation results without the extensive computation that simulations would take. To realize the ultimate goal, we separate it into two sub-goals. One of the sub-goals is to predict fracture nucleation and the other one is to predict fracture propagation. The nucleation event is where fractures will emerge and must be predicted in a certain region and fracture propagation is a continuing process of atoms being included in the fracture region, also known as the process zone.
 
 \begin{itemize}
-\item \textbf{Goal 1:} \emph{Predicting Fracture Nucleation Events} 
+\item \textbf{Goal 1:} \emph{Predict fracture nucleation events.} 
 
-A nucleation event is where a fracture emerges from the structure without any previous fracture existence. We assume that a nucleation event is primarily influenced by the local structure at the atomic level of the material. And an ensemble of random forest model is built to test our hypothesis, by identifying these latent structures from the data. Detailed explanation is presented in the method section.
-\end{itemize}
+A nucleation event is where a new fracture, or void, emerges in the simulated system.  We aim to predict whether, based on the initial state of the system, a given atom lies on the boundary of a fracture at a certain later time in the simulation.  In order to do this, we assume that a nucleation event is primarily influenced by local atomic structure.  The definition of local could involve up to the $k$th neighbor of an atom, for some value of $k$.  The goal is to use network feature information of this kind to train a classifier to predict whether or not an atom ultimately forms part of a nucleation event.  We will also consider the closely related regression problem of estimating the probability that the atom forms part of a nucleation event.
 
-\begin{itemize}
-\item \textbf{Goal 2:} \emph{Predicting Fracture Propagation} 
+%And an ensemble of random forest model is built to test our hypothesis, by identifying these latent structures from the data. Detailed explanation is presented in the method section.
 
-Once a fracture nucleates in the material, it propagates along the existing fracture, as stress keeps being applied uni-axially. Our goal is to identify which atoms will be associated with the fracture region as it propagates over time. In this case, the input will be a time series of features. A Long-short Term Memory(LSTM) neural network will be used to capture the dynamic process of the fracture propagation. The main benefit of using LSTM is that it is a more flexible model and we are able control how much memory we would like the model to contain when making predictions.
+\item \textbf{Goal 2:} \emph{Predict fracture propagation.} 
+
+Fracture propagation is a continuing process of incorporating atoms into the fracture region, also known as the process zone.
+Once a fracture nucleates at the surface or within the bulk of the material, it grows with the continued application of mechanical stress.  We aim to identify which new atoms will lie on the fracture's boundary as it propagates.  Our goal is to train a supervised learning algorithm to learn the dynamics of fracture propagation from the full time series of feature values, so that it can then predict a time series from $t=0$ feature values alone.
+
+%propagates along the existing fracture, as stress keeps being applied uni-axially. Our goal is to identify which atoms will be associated with the fracture region as it propagates over time. In this case, the input will be a time series of features.
+
 \end{itemize}
