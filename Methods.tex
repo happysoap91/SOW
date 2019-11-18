@@ -44,7 +44,7 @@ There are significant benefits to having vertices whose identities do not change
 
 An alternative graph representation is to consider only silicon atoms as nodes, and bonds through bridging oxygen atoms as edges.  Given the atomic content of SiO$_2$, this representation reduces the number of vertices approximately threefold, to 25,000 or less.  It also simplifies the encoding of Q$_n$ information, as a node with degree $n$ necessarily bonds to $n$ bridging oxygens, and thus forms a Q$_n$ unit.
 
-Like the basic graph representation described previously, this reduced representation keeps the number of vertices constant.  On the other hand, it does not explicitly track bonds that are formed and broken at each time step: if a bond is broken in an Si--O--Si bridge, this representation will not distinguish between the case where the first bond, or the second bond, or both, are broken.  Similarly, the coordination number of an Si atom will not be given explicitly by node degree.  However, this information can, if needed, be encoded as feature information (see below).
+Like the basic graph representation described previously, this reduced representation keeps the number of vertices constant.  On the other hand, it does not explicitly track bonds that are formed and broken at each time step. If a bond is broken in an Si--O--Si bridge, this representation will not distinguish between the case where the first bond, or the second bond, or both, are broken, although this may not be an issue if we are primarily interested in Si atoms on the crack face.  Similarly, the coordination number of an Si atom will not be given explicitly by node degree.  However, this information can, if needed, be encoded as feature information (see below).
 
 \subsubsection{Additional Graph Formulations}
 
@@ -83,15 +83,21 @@ We propose a range of candidate features that are meaningful both for the basic 
 \begin{itemize}
 %    \item \textbf{Atom type:} In the basic graph representation, vertices can denote both silicon and oxygen atoms.  In order to distinguish between them, a binary-valued feature may be assigned to a vertex that identifies which type of atom it is.  This feature would not be needed in the reduced graph representation, where vertices necessarily denote silicon atoms.
     
-    \item \textbf{Cell volume:} A local density measure is given by the Voronoi diagram that partitions the system into polygonal cells surrounding each atom.  We define $v_i(t)$ to be the Voronoi cell volume of atom $i$ at time $t$.  These cell volumes can help our model understand which atoms are closely associated with fracture nucleation, by learning how and where volume increases.  When a fracture emerges, atoms on its boundary will have rapidly increasing cell volumes representing newly available space in the void.
+    \item \textbf{Cell volume:} A local density measure is given by the Voronoi diagram that partitions the system into polygonal cells surrounding each atom.  We define $v_i(t)$ to be the Voronoi cell volume of atom $i$ at time $t$.  These cell volumes can help our model understand which atoms are closely associated with fracture nucleation, by learning how and where volume increases.  When a fracture emerges, atoms neighboring it will have rapidly increasing cell volumes representing newly available space in the void.
     
-    Note that while atoms on the boundary of a free surface can also have very large cell volumes, these volumes will already be large at $t=0$ and will typically not grow during the simulation.  A model that correctly learns the dynamics of cell volumes should therefore avoid mistaking the free surface for a fracture.
+    Note that while atoms on the boundary of a free surface can also have very large cell volumes, these volumes will already be large at $t=0$ and will typically not change as dramatically during the simulation.  A model that correctly learns the dynamics of cell volumes should therefore avoid mistaking the free surface for a fracture.
 
-    \item \textbf{Atom displacement:} As fractures nucleate, atoms on its boundary may undergo more rapid displacement than do others.  Let $\mathbf{r}_i(t)$ be the vector representing the $(x,y,z)$ position of atom $i$ at time $t$. The physical displacement of an atom from one time step to the next, $\Delta \mathbf{r}(t)=\mathbf{r}_i(t)-\mathbf{r}_i(t-1)$, could help in predicting where and when fractures grow. 
+    \item \textbf{Atom displacement:} As fractures nucleate, atoms on its boundary may undergo more rapid displacement than do others.  Let $\mathbf{r}_i(t)$ be the vector representing the $(x,y,z)$ position of atom $i$ at time $t$. The physical displacement of an atom from one time step to the next is $\Delta \mathbf{r}(t)=\mathbf{r}_i(t)-\mathbf{r}_i(t-1)$.
+    
+    Of course, this feature is not defined at $t=0$.  However, for an ML algorithm that learns dynamics from a full time series, incorporating displacement as an explicit feature may be productive in training the algorithm on where and when fractures grow.
 
-    \item\textbf{Stress tensor:} The Cauchy stress tensor $\boldsymbol{\sigma}$ describes the local stress at each atom.  It may be the case that, prior to fracture growth, atoms that will ultimately form the fracture boundary undergo changes in values of their stress tensor components~\cite{elastic_fracture}. Note that, even in the absence of fracturing, considerable local fluctuations may occur in these values from one atom to the next.  Some form of spatial averaging may help in reducing these fluctuations.
+    \item\textbf{Stress tensor:} The virial stress tensor $\boldsymbol{\sigma}$ describes the local stress at each atom.  It may be the case that, prior to fracture growth, atoms that will ultimately form the fracture boundary undergo changes in values of their stress tensor components~\cite{elastic_fracture}. Note that, even in the absence of fracturing, considerable local fluctuations may occur in these values from one atom to the next.  Some form of spatial averaging may help in reducing these fluctuations.
 
     \item\textbf{Charge:} The emergence of fractures arises most directly from bond breaking.  The charge of an atom plays a crucial role in this.  As with the stress tensor components, we expect that atoms on a fracture boundary may, prior to fracture growth, exhibit characteristic changes in charge value.
+    
+    \item \textbf{Active atoms:} Over the course of the simulation, bonds break and new bonds form.  When a bond breaks, we define atoms that it previously connected to be active.  Likewise, when a new bond forms, we defines the atoms that it connects to be active.  Once an atom becomes active, it is considered active for the entire remainder of the simulation.
+    
+    It is natural to expect that being active is a necessary (but not sufficient) condition for an atom to be on the surface of a crack face.  As with atom displacement, this feature does not provide useful information at $t=0$, but could be productive in enabling an algorithm to focus on a subset of atoms of interest if it trains on a full time series.
 %    We will take the charge of each atom in account to examine what effect each charge has in forming a fracture. The real values in our data represent the effects of quantum fluctuations from shifts of electron clouds. It is important to note that high charges indicate strong forces between atoms. Therefore, there is more activity. We want to investigate whether high charges are directly associated to active sets.
 \end{itemize}
 
@@ -162,11 +168,11 @@ A fracture involves the creation of a void in the material. When stress is appli
     \centering
     \noindent
     \includegraphics[width=8cm, height=6cm]{picture/volcolor.PNG}
-    \caption{Atoms in red are those with Voronoi cell volume $v_i>42$.  Dark areas are voids that represent fractures.}
+    \caption{Atoms in red are those with Voronoi cell volume $v_i>0.042$~nm$^3$.  Dark areas are voids that represent fractures.}
     \label{fig:crack_vol}
     \end{figure}
     
-In order to establish the ground truth, we will set the threshold value for a given time $t$ to be equal to three standard deviations above the mean Voronoi cell volume at that time.  Thus, we test whether the standardized cell volume
+In order to establish the ground truth, we will set the threshold value for a given time $t$ to be equal to three standard deviations above the mean Voronoi cell volume at that time.  Thus, we define a standardized cell volume and test whether it is greater than 3:
     \begin{equation}
     \hat{v}_i(t) = \frac{v_i(t) - \mu_v(t)}{\sigma_v(t)} > 3,
     \end{equation}
@@ -234,9 +240,8 @@ Our boosting algorithm will work as follows:
 
 \subsubsection{Fracture Propagation}
 %RNN, 
-Due to the dynamical nature of our graph changing over each time step, we will be implementing an RNN to predict the ground truth at each time step. An illustration of the basic RNN architecture is shown in Figure~\ref{fig:rnn}.  The main idea behind an RNN is that it trains on an entire time series, learning the dynamics of a process which it stores using a ``memory'' of internal states.  The LSTM mechanism is a refinement of this memory, allowing the neural network to give added weight to information learned in more recent time steps.
 
-\begin{figure}
+\begin{figure}[!b]
     \centering
     \noindent
 \includegraphics[width=12cm , height = 5cm]{picture/rnn.PNG}
@@ -244,12 +249,13 @@ Due to the dynamical nature of our graph changing over each time step, we will b
     \label{fig:rnn}
 \end{figure}
 
+Due to the dynamical nature of our graph changing over each time step, we will be implementing an RNN to predict the ground truth at each time step. An illustration of the basic RNN architecture is shown in Figure~\ref{fig:rnn}.  The main idea behind an RNN is that it trains on an entire time series, learning the dynamics of a process which it stores using a ``memory'' of internal states.  The LSTM mechanism is a refinement of this memory, allowing the neural network to give added weight to information learned in more recent time steps.
 
-The training input to our RNN will be a time series of graphs based on simulation data, where nodes will be labeled with the full set of feature values described in Section~\ref{subsec: Features}.  For every time $t$, the RNN outputs feature and ground truth values for time $t+1$.  These are compared with simulation results, from which a loss function is calculated and the internal neural network weights are updated.
+The training input to our RNN will be a time series of graphs based on simulation data, where nodes will be labeled with the full set of feature values described in Section~\ref{subsec: Features}.  For every time $t$, the RNN uses the (appropriately weighted) information from that and all previous times to output feature and ground truth values for time $t+1$.  These are compared with simulation results, from which a loss function is calculated and the internal neural network weights are updated.
 
-Once the RNN is trained and its weights are set, it is used for prediction.  The input at this point is simply the $t=0$ feature values, but the output is a time series of graphs, giving the full predicted evolution of features and ground truth.
+Once the RNN is trained and its weights are set, it is used for prediction.  Unlike in the training phase, the input in the prediction phase is simply the $t=0$ feature values.  The output is a time series of graphs, giving the full predicted evolution of features and ground truth.
 
-Note that certain of our features, such as atom displacement, are undefined at $t=0$ and thus are meaningful only as part of the training process.  Others, however, are well-defined at any individual time step.
+Recall that certain of our features, such as atom displacement and active atoms, are undefined at $t=0$ and thus meaningful only as part of the training process.  Others, however, are well-defined at any individual time step.
 
 % Voronoi cell volume for all the atoms at time step $t$, which is a vector of length $n$.
 
@@ -309,7 +315,7 @@ The proposed architecture is as follows:
     \item Split the dataset into three sets: training, validation, and test
     \item
     \begin{enumerate}
-        \item Train the training set using RF to predict which atoms are part of a fracture.
+        \item Train the training set using Random Forest to predict which atoms are part of a fracture.
         \item Train the data using LSTM to predict fracture evolution.
     \end{enumerate}
     \item Validate surrogate model using validation set.
